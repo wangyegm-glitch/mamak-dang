@@ -2,6 +2,7 @@
 const appState = {
     currentCategory: 'appetizer',
     cart: [],
+    selectedTable: null, // 选中的桌号
     noodleCustomization: {
         currentStep: 1,
         selectedTopping: null,
@@ -14,13 +15,14 @@ const appState = {
 
 // DOM 元素
 const elements = {
-    categoryTabs: document.getElementById('categoryTabs'),
     menuContainer: document.getElementById('menuContainer'),
+    tableList: document.getElementById('tableList'),
     cartIcon: document.getElementById('cartIcon'),
     cartBadge: document.getElementById('cartBadge'),
     cartSidebar: document.getElementById('cartSidebar'),
     cartItems: document.getElementById('cartItems'),
     cartTotal: document.getElementById('cartTotal'),
+    cartHeaderTitle: document.getElementById('cartHeaderTitle'),
     closeCartBtn: document.getElementById('closeCartBtn'),
     submitOrderBtn: document.getElementById('submitOrderBtn'),
     clearCartBtn: document.getElementById('clearCartBtn'),
@@ -39,20 +41,13 @@ const elements = {
 // 初始化应用
 function init() {
     setupEventListeners();
-    renderMenu('appetizer');
+    renderAllMenus();
+    renderTables();
     updateCartBadge();
 }
 
 // 设置事件监听器
 function setupEventListeners() {
-    // 分类标签切换
-    elements.categoryTabs.addEventListener('click', (e) => {
-        if (e.target.classList.contains('tab-btn')) {
-            const category = e.target.dataset.category;
-            switchCategory(category);
-        }
-    });
-
     // 购物车相关
     elements.cartIcon.addEventListener('click', openCart);
     elements.closeCartBtn.addEventListener('click', closeCart);
@@ -78,81 +73,104 @@ function setupEventListeners() {
     });
 }
 
-// 切换分类
-function switchCategory(category) {
-    appState.currentCategory = category;
+// 渲染所有菜单（所有分类同时显示）
+function renderAllMenus() {
+    elements.menuContainer.innerHTML = '';
     
-    // 更新标签状态
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.category === category) {
-            btn.classList.add('active');
+    // 定义分类顺序和显示名称（只显示英文）
+    const categories = [
+        { key: 'appetizer', name: 'Appetizer', color: '#FF9800' },
+        { key: 'roti', name: 'Roti Paratha', color: '#8B4513' },
+        { key: 'noodles', name: 'Noodle', color: '#FF69B4' },
+        { key: 'nasi', name: 'Nasi Lemak', color: '#9C27B0' },
+        { key: 'rice', name: 'Jasmine Rice', color: '#F44336' },
+        { key: 'platter', name: 'Mamak Dang Special Platter', color: '#9C27B0' },
+        { key: 'extra', name: 'Extra', color: '#FF9800' }
+    ];
+    
+    categories.forEach(category => {
+        // 添加分类标题
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'category-title';
+        titleDiv.style.borderLeftColor = category.color;
+        titleDiv.textContent = category.name;
+        elements.menuContainer.appendChild(titleDiv);
+        
+        // 渲染该分类下的所有菜品
+        if (category.key === 'noodles') {
+            // 面类特殊处理 - 显示"开始定制"按钮
+            const noodleBtn = document.createElement('button');
+            noodleBtn.className = 'menu-item-btn';
+            noodleBtn.style.borderLeftColor = category.color;
+            noodleBtn.onclick = startNoodleCustomization;
+            noodleBtn.innerHTML = `
+                <div class="menu-btn-name">Customize Noodles</div>
+            `;
+            elements.menuContainer.appendChild(noodleBtn);
+        } else {
+            const items = menuData[category.key] || [];
+            items.forEach(item => {
+                const menuItem = createMenuItem(item, category.key, category.color);
+                elements.menuContainer.appendChild(menuItem);
+            });
         }
     });
-
-    renderMenu(category);
 }
 
-// 渲染菜单
-function renderMenu(category) {
-    elements.menuContainer.innerHTML = '';
-
-    if (category === 'noodles') {
-        // 面类特殊处理 - 显示"开始定制"按钮
-        const noodleCard = document.createElement('div');
-        noodleCard.className = 'menu-item';
-        noodleCard.innerHTML = `
-            <div class="menu-item-image">🍜</div>
-            <div class="menu-item-content">
-                <div class="menu-item-header">
-                    <div class="menu-item-name">Customize Noodles<br>定制面类</div>
-                </div>
-                <div class="menu-item-description">Select ingredients, soup base, noodle type and spice level<br>选择配料、汤底、面条类型和辣度</div>
-                <button class="add-btn" onclick="startNoodleCustomization()">Start Customization<br>开始定制</button>
-            </div>
-        `;
-        elements.menuContainer.appendChild(noodleCard);
-    } else {
-        const items = menuData[category] || [];
-        items.forEach(item => {
-            const menuItem = createMenuItem(item, category);
-            elements.menuContainer.appendChild(menuItem);
-        });
-    }
-}
-
-// 创建菜单项
-function createMenuItem(item, category) {
-    const div = document.createElement('div');
-    div.className = 'menu-item';
-    const nameDisplay = item.nameCN ? `${item.name}<br>${item.nameCN}` : item.name;
-    // 生成随机评分（4.0-5.0之间）
-    const rating = (4.0 + Math.random() * 1.0).toFixed(1);
-    const reviewCount = Math.floor(Math.random() * 200) + 50;
+// 渲染桌台列表
+function renderTables() {
+    // 指定的桌号列表
+    const tableNumbers = ['1', '2', '3', '4', '5a', '5b', '6a', '6b', '7a', '7b'];
     
-    div.innerHTML = `
-        <div class="menu-item-image">🍽️</div>
-        <div class="menu-item-content">
-            <div class="menu-item-header">
-                <div>
-                    <div class="menu-item-name">${nameDisplay}</div>
-                    <div class="menu-item-rating">
-                        <span class="rating-stars">${'⭐'.repeat(5)}</span>
-                        <span class="rating-text">${rating} (${reviewCount} Reviews)</span>
-                    </div>
-                </div>
-                <div class="menu-item-price">$${item.price.toFixed(2)}</div>
-            </div>
-            <div class="menu-item-code">Code / 代码: ${item.code}</div>
-            ${item.description ? `<div class="menu-item-description">${item.description}</div>` : ''}
-            <button class="add-btn" onclick="addToCart(${item.id}, '${category}')">Add to Order<br>添加到订单</button>
+    elements.tableList.innerHTML = tableNumbers.map((tableNum, index) => `
+        <div class="table-item ${index === 0 ? 'active' : ''}" data-table-num="${tableNum}">
+            <span>⋯</span>
+            <span>${tableNum}</span>
         </div>
+    `).join('');
+    
+    // 默认选择第一个桌台
+    if (tableNumbers.length > 0) {
+        appState.selectedTable = tableNumbers[0];
+    }
+    
+    // 添加桌台点击事件
+    elements.tableList.querySelectorAll('.table-item').forEach(item => {
+        item.addEventListener('click', () => {
+            elements.tableList.querySelectorAll('.table-item').forEach(t => t.classList.remove('active'));
+            item.classList.add('active');
+            appState.selectedTable = item.dataset.tableNum;
+            // 如果购物车已打开，更新标题
+            if (elements.cartSidebar.classList.contains('open') && elements.cartHeaderTitle) {
+                elements.cartHeaderTitle.textContent = `Order - Table ${appState.selectedTable}`;
+            }
+        });
+    });
+}
+
+
+// 创建菜单项 - 按钮样式，只显示英文名
+function createMenuItem(item, category, color) {
+    const button = document.createElement('button');
+    button.className = 'menu-item-btn';
+    button.style.borderLeftColor = color;
+    button.onclick = () => addToCart(item.id, category);
+    
+    // 只显示英文名，不显示价格
+    button.innerHTML = `
+        <div class="menu-btn-name">${item.name}</div>
     `;
-    return div;
+    return button;
 }
 
 // 添加到购物车
 function addToCart(itemId, category) {
+    // 检查是否选择了桌号
+    if (!appState.selectedTable) {
+        showToast('Please select a table first / 请先选择桌号');
+        return;
+    }
+    
     const items = menuData[category];
     const item = items.find(i => i.id === itemId);
     
@@ -160,17 +178,18 @@ function addToCart(itemId, category) {
 
     const cartItem = {
         id: Date.now(),
-        name: item.nameCN || item.name,
+        name: item.name, // 只使用英文名
         code: item.code,
         price: item.price,
         description: item.description || '',
         category: category,
-        quantity: 1
+        quantity: 1,
+        table: appState.selectedTable // 记录桌号
     };
 
     appState.cart.push(cartItem);
     updateCartBadge();
-    showToast('已添加到订单');
+    showToast('Added to order');
 }
 
 // 开始面类定制
@@ -251,35 +270,29 @@ function renderToppingStep() {
     const toppings = menuData.noodles.toppings.filter(topping => topping.id !== 'small');
     
     return `
-        <h3 style="margin-bottom: 20px; color: #333;">Select Ingredients<br>选择配料</h3>
+        <h3 style="margin-bottom: 12px; color: #333; font-size: 14px;">Select Ingredients</h3>
         <div class="option-grid">
             ${toppings.map(topping => {
-                const nameDisplay = topping.nameCN ? `${topping.name}<br>${topping.nameCN}` : topping.name;
                 return `
-                <div class="option-card ${appState.noodleCustomization.selectedTopping?.id === topping.id ? 'selected' : ''}" 
+                <button class="option-card ${appState.noodleCustomization.selectedTopping?.id === topping.id ? 'selected' : ''}" 
                      onclick="selectTopping('${topping.id}')">
-                    <div class="option-card-name">${nameDisplay}</div>
-                    <div class="option-card-price">$${topping.price.toFixed(2)}</div>
-                    ${topping.note ? `<div style="font-size: 11px; color: #999; margin-top: 5px;">${topping.note}</div>` : ''}
-                </div>
+                    <div class="option-card-name">${topping.name}</div>
+                </button>
             `;
             }).join('')}
         </div>
         <!-- 规格选择 -->
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-            <h4 style="margin-bottom: 12px; color: #666; font-size: 14px; font-weight: 600;">Size / 规格（可选）</h4>
-            <div class="option-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;">
+            <h4 style="margin-bottom: 8px; color: #666; font-size: 12px; font-weight: 600;">Size (Optional)</h4>
+            <div class="option-grid">
                 ${(() => {
                     const cuteSize = menuData.noodles.toppings.find(t => t.id === 'small');
                     if (!cuteSize) return '';
-                    const nameDisplay = cuteSize.nameCN ? `${cuteSize.name}<br>${cuteSize.nameCN}` : cuteSize.name;
                     return `
-                    <div class="option-card ${appState.noodleCustomization.selectedSize?.id === cuteSize.id ? 'selected' : ''}" 
+                    <button class="option-card ${appState.noodleCustomization.selectedSize?.id === cuteSize.id ? 'selected' : ''}" 
                          onclick="selectSize('${cuteSize.id}')">
-                        <div class="option-card-name">${nameDisplay}</div>
-                        <div class="option-card-price">$${cuteSize.price.toFixed(2)}</div>
-                        ${cuteSize.note ? `<div style="font-size: 11px; color: #999; margin-top: 5px;">${cuteSize.note}</div>` : ''}
-                    </div>
+                        <div class="option-card-name">${cuteSize.name}</div>
+                    </button>
                 `;
                 })()}
             </div>
@@ -290,16 +303,14 @@ function renderToppingStep() {
 // 渲染汤底选择步骤
 function renderBaseStep() {
     return `
-        <h3 style="margin-bottom: 20px; color: #333;">Select Soup Base<br>选择汤底</h3>
+        <h3 style="margin-bottom: 12px; color: #333; font-size: 14px;">Select Soup Base</h3>
         <div class="option-grid">
             ${menuData.noodles.bases.map(base => {
-                const nameDisplay = base.nameCN ? `${base.name}<br>${base.nameCN}` : base.name;
                 return `
-                <div class="option-card ${appState.noodleCustomization.selectedBase?.id === base.id ? 'selected' : ''}" 
+                <button class="option-card ${appState.noodleCustomization.selectedBase?.id === base.id ? 'selected' : ''}" 
                      onclick="selectBase('${base.id}')">
-                    <div class="option-card-name">${nameDisplay}</div>
-                    <div style="font-size: 12px; color: #666; margin-top: 5px;">${base.description}</div>
-                </div>
+                    <div class="option-card-name">${base.name}</div>
+                </button>
             `;
             }).join('')}
         </div>
@@ -309,15 +320,14 @@ function renderBaseStep() {
 // 渲染面条类型选择步骤
 function renderNoodleStep() {
     return `
-        <h3 style="margin-bottom: 20px; color: #333;">Select Noodle Type<br>选择面条类型</h3>
+        <h3 style="margin-bottom: 12px; color: #333; font-size: 14px;">Select Noodle Type</h3>
         <div class="option-grid">
             ${menuData.noodles.noodleTypes.map(noodle => {
-                const nameDisplay = noodle.nameCN ? `${noodle.name}<br>${noodle.nameCN}` : noodle.name;
                 return `
-                <div class="option-card ${appState.noodleCustomization.selectedNoodle?.id === noodle.id ? 'selected' : ''}" 
+                <button class="option-card ${appState.noodleCustomization.selectedNoodle?.id === noodle.id ? 'selected' : ''}" 
                      onclick="selectNoodle('${noodle.id}')">
-                    <div class="option-card-name">${nameDisplay}</div>
-                </div>
+                    <div class="option-card-name">${noodle.name}</div>
+                </button>
             `;
             }).join('')}
         </div>
@@ -461,12 +471,12 @@ function addNoodleToCart() {
         code = `${selectedSize.code} ${code}`.trim();
     }
     
-    // 生成名称（双语）
-    const toppingName = selectedTopping.nameCN ? `${selectedTopping.name} / ${selectedTopping.nameCN}` : selectedTopping.name;
-    const baseName = selectedBase.nameCN ? `${selectedBase.name} / ${selectedBase.nameCN}` : selectedBase.name;
-    const noodleName = selectedNoodle.nameCN ? `${selectedNoodle.name} / ${selectedNoodle.nameCN}` : selectedNoodle.name;
-    const spicyName = selectedSpicy.nameCN ? `${selectedSpicy.name} / ${selectedSpicy.nameCN}` : selectedSpicy.name;
-    const sizeName = selectedSize ? (selectedSize.nameCN ? `${selectedSize.name} / ${selectedSize.nameCN}` : selectedSize.name) : '';
+    // 生成名称（只使用英文）
+    const toppingName = selectedTopping.name;
+    const baseName = selectedBase.name;
+    const noodleName = selectedNoodle.name;
+    const spicyName = selectedSpicy.name;
+    const sizeName = selectedSize ? selectedSize.name : '';
     
     // 如果有规格，在名称前添加规格信息
     let name = `${toppingName} ${baseName} (${noodleName}, ${spicyName})`;
@@ -477,16 +487,21 @@ function addNoodleToCart() {
     // 价格：如果选择了规格，使用规格的价格，否则使用配料的原价
     const price = selectedSize ? selectedSize.price : selectedTopping.price;
     
+    // 检查是否选择了桌号
+    if (!appState.selectedTable) {
+        showToast('Please select a table first / 请先选择桌号');
+        return;
+    }
+    
     const cartItem = {
         id: Date.now(),
         name: name,
-        nameEN: selectedSize ? `${selectedSize.name} ${selectedTopping.name} ${selectedBase.name} (${selectedNoodle.name}, ${selectedSpicy.name})` : `${selectedTopping.name} ${selectedBase.name} (${selectedNoodle.name}, ${selectedSpicy.name})`,
-        nameCN: selectedSize ? `${selectedSize.nameCN || selectedSize.name} ${selectedTopping.nameCN || selectedTopping.name} ${selectedBase.nameCN || selectedBase.name} (${selectedNoodle.nameCN || selectedNoodle.name}, ${selectedSpicy.nameCN || selectedSpicy.name})` : `${selectedTopping.nameCN || selectedTopping.name} ${selectedBase.nameCN || selectedBase.name} (${selectedNoodle.nameCN || selectedNoodle.name}, ${selectedSpicy.nameCN || selectedSpicy.name})`,
         code: code,
         price: price,
         description: `${selectedBase.description} | ${noodleName} | ${spicyName} ${selectedSpicy.icon}${selectedSize ? ` | ${sizeName}` : ''}`,
         category: 'noodles',
         quantity: 1,
+        table: appState.selectedTable, // 记录桌号
         customization: {
             topping: selectedTopping,
             base: selectedBase,
@@ -498,7 +513,7 @@ function addNoodleToCart() {
     
     appState.cart.push(cartItem);
     updateCartBadge();
-    showToast('Added to order / 已添加到订单');
+    showToast('Added to order');
     closeNoodleModal();
 }
 
@@ -507,6 +522,14 @@ function openCart() {
     elements.cartSidebar.classList.add('open');
     elements.overlay.classList.add('active');
     renderCart();
+    // 更新购物车标题显示桌号
+    if (elements.cartHeaderTitle) {
+        if (appState.selectedTable) {
+            elements.cartHeaderTitle.textContent = `Order - Table ${appState.selectedTable}`;
+        } else {
+            elements.cartHeaderTitle.textContent = 'Order - Select Table';
+        }
+    }
 }
 
 // 关闭购物车
@@ -521,7 +544,7 @@ function renderCart() {
         elements.cartItems.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🛒</div>
-                <div>订单为空</div>
+                <div>Order is empty</div>
             </div>
         `;
         elements.cartTotal.textContent = '0.00';
@@ -533,7 +556,7 @@ function renderCart() {
             <div class="cart-item-info">
                 <div class="cart-item-name">${item.name}</div>
                 ${item.description ? `<div class="cart-item-details">${item.description}</div>` : ''}
-                <div class="cart-item-details">代码: ${item.code}</div>
+                <div class="cart-item-details">Code: ${item.code}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
@@ -578,21 +601,28 @@ function updateCartBadge() {
 
 // 提交订单
 function submitOrder() {
+    // 检查是否选择了桌号
+    if (!appState.selectedTable) {
+        showToast('Please select a table first / 请先选择桌号');
+        return;
+    }
+    
     if (appState.cart.length === 0) {
-        showToast('订单为空');
+        showToast('Order is empty / 订单为空');
         return;
     }
     
     // 生成订单摘要
-    let orderSummary = '订单详情：\n\n';
+    let orderSummary = `Table: ${appState.selectedTable}\n`;
+    orderSummary += `Order Details:\n\n`;
     appState.cart.forEach((item, index) => {
         orderSummary += `${index + 1}. ${item.name} x${item.quantity}\n`;
-        orderSummary += `   代码: ${item.code}\n`;
-        orderSummary += `   价格: $${(item.price * item.quantity).toFixed(2)}\n\n`;
+        orderSummary += `   Code: ${item.code}\n`;
+        orderSummary += `   Price: $${(item.price * item.quantity).toFixed(2)}\n\n`;
     });
     
     const total = appState.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    orderSummary += `总计: $${total.toFixed(2)}`;
+    orderSummary += `Total: $${total.toFixed(2)}`;
     
     // 这里可以发送到服务器或打印
     console.log(orderSummary);
@@ -600,16 +630,16 @@ function submitOrder() {
     
     // 清空购物车
     clearCart();
-    showToast('订单已提交');
+    showToast('Order submitted');
 }
 
 // 清空购物车
 function clearCart() {
-    if (confirm('确定要清空订单吗？')) {
+    if (confirm('Clear order? / 确定要清空订单吗？')) {
         appState.cart = [];
         updateCartBadge();
         renderCart();
-        showToast('订单已清空');
+        showToast('Order cleared');
     }
 }
 
@@ -617,13 +647,19 @@ function clearCart() {
 function addByShortCode() {
     const code = elements.shortCodeInput.value.trim().toUpperCase();
     if (!code) {
-        showToast('请输入短代码');
+        showToast('Please enter code / 请输入短代码');
+        return;
+    }
+    
+    // 检查是否选择了桌号
+    if (!appState.selectedTable) {
+        showToast('Please select a table first / 请先选择桌号');
         return;
     }
     
     const mapped = shortCodeMap[code];
     if (!mapped) {
-        showToast('未找到该短代码');
+        showToast('Code not found / 未找到该短代码');
         return;
     }
     

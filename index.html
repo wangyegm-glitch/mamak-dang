@@ -7,46 +7,57 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- 顶部导航栏 -->
+    <!-- 顶部搜索栏 -->
     <header class="header">
-        <div class="header-content">
-            <h1>Mamak Dang 点餐系统</h1>
-            <div class="cart-icon" id="cartIcon">
-                <span class="cart-badge" id="cartBadge">0</span>
-                🛒
-            </div>
+        <div class="search-bar">
+            <input type="text" id="shortCodeInput" placeholder="Scan barcode or search" class="search-input">
+            <button id="addByCodeBtn" class="search-btn">🔍</button>
         </div>
     </header>
 
-    <!-- 主内容区 -->
-    <main class="main-content">
-        <!-- 快速输入短代码 -->
-        <div class="quick-input-section">
-            <input type="text" id="shortCodeInput" placeholder="输入短代码快速添加 (如: SP L, ROTI C)" class="short-code-input">
-            <button id="addByCodeBtn" class="btn-primary">添加</button>
-        </div>
+    <!-- 主布局容器 -->
+    <div class="main-layout">
+        <!-- 左侧桌台边栏 -->
+        <aside class="table-sidebar">
+            <div class="table-header">
+                <div class="timer">⏱️ 0m</div>
+                <div class="table-label">Table</div>
+            </div>
+            <div class="table-list" id="tableList">
+                <!-- 桌台列表将通过JavaScript动态生成 -->
+            </div>
+            <div class="table-totals">
+                <div class="total-line">$0.00</div>
+                <div class="total-line">$0.00</div>
+                <div class="total-line">$0.00</div>
+            </div>
+        </aside>
 
-        <!-- 菜单分类标签 -->
-        <div class="category-tabs" id="categoryTabs">
-            <button class="tab-btn active" data-category="appetizer">开胃菜</button>
-            <button class="tab-btn" data-category="roti">Roti Paratha</button>
-            <button class="tab-btn" data-category="noodles">面类</button>
-            <button class="tab-btn" data-category="nasi">Nasi Lemak</button>
-            <button class="tab-btn" data-category="rice">茉莉香米饭</button>
-            <button class="tab-btn" data-category="platter">特别拼盘</button>
-            <button class="tab-btn" data-category="extra">额外选项</button>
-        </div>
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 菜单列表 - 所有分类同时显示 -->
+            <div class="menu-container" id="menuContainer">
+                <!-- 菜单项将通过JavaScript动态生成 -->
+            </div>
+        </main>
+    </div>
 
-        <!-- 菜单列表 -->
-        <div class="menu-container" id="menuContainer">
-            <!-- 菜单项将通过JavaScript动态生成 -->
+    <!-- 底部操作栏 -->
+    <footer class="bottom-actions">
+        <button class="action-btn" id="printIndividualBtn">Print Individual Bills</button>
+        <button class="action-btn" id="printEntireBtn">Print Entire Bill</button>
+        <button class="action-btn" id="moveOrderBtn">Move Order</button>
+        <button class="action-btn" id="addDiscountBtn">Add Order Discounts</button>
+        <div class="cart-icon-bottom" id="cartIcon">
+            <span class="cart-badge" id="cartBadge">0</span>
+            🛒
         </div>
-    </main>
+    </footer>
 
     <!-- 购物车侧边栏 -->
     <div class="cart-sidebar" id="cartSidebar">
         <div class="cart-header">
-            <h2>订单</h2>
+            <h2 id="cartHeaderTitle">Order</h2>
             <button class="close-btn" id="closeCartBtn">✕</button>
         </div>
         <div class="cart-items" id="cartItems">
@@ -54,10 +65,10 @@
         </div>
         <div class="cart-footer">
             <div class="cart-total">
-                <span>总计: $<span id="cartTotal">0.00</span></span>
+                <span>Total: $<span id="cartTotal">0.00</span></span>
             </div>
-            <button class="btn-submit" id="submitOrderBtn">提交订单</button>
-            <button class="btn-clear" id="clearCartBtn">清空订单</button>
+            <button class="btn-submit" id="submitOrderBtn">Submit Order</button>
+            <button class="btn-clear" id="clearCartBtn">Clear Order</button>
         </div>
     </div>
 
