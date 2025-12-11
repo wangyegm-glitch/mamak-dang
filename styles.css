@@ -645,7 +645,7 @@ body {
 
 .option-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     gap: 6px;
     margin-bottom: 12px;
 }
@@ -843,7 +843,8 @@ body {
 
 @media (max-width: 480px) {
     .option-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+        gap: 4px;
     }
     
     .cart-sidebar {
@@ -860,5 +861,14 @@ body {
     
     .menu-btn-name {
         font-size: 9px;
+    }
+    
+    .option-card {
+        min-height: 35px;
+        padding: 6px 8px;
+    }
+    
+    .option-card-name {
+        font-size: 10px;
     }
 }
