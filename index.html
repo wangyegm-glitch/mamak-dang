@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>餐厅点餐系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 顶部搜索栏 -->
+    <header class="header">
+        <div class="search-bar">
+            <input type="text" id="shortCodeInput" placeholder="Scan barcode or search" class="search-input">
+            <button id="addByCodeBtn" class="search-btn">🔍</button>
+        </div>
+    </header>
+
+    <!-- 主布局容器 -->
+    <div class="main-layout">
+        <!-- 左侧桌台边栏 -->
+        <aside class="table-sidebar">
+            <div class="table-header">
+                <div class="timer">⏱️ 0m</div>
+                <div class="table-label">Table</div>
+            </div>
+            <div class="table-list" id="tableList">
+                <!-- 桌台列表将通过JavaScript动态生成 -->
+            </div>
+            <div class="table-totals">
+                <div class="total-line">$0.00</div>
+                <div class="total-line">$0.00</div>
+                <div class="total-line">$0.00</div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 菜单列表 - 所有分类同时显示 -->
+            <div class="menu-container" id="menuContainer">
+                <!-- 菜单项将通过JavaScript动态生成 -->
+            </div>
+        </main>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="bottom-actions">
+        <button class="action-btn" id="printIndividualBtn">Print Individual Bills</button>
+        <button class="action-btn" id="printEntireBtn">Print Entire Bill</button>
+        <button class="action-btn" id="moveOrderBtn">Move Order</button>
+        <button class="action-btn" id="addDiscountBtn">Add Order Discounts</button>
+        <div class="cart-icon-bottom" id="cartIcon">
+            <span class="cart-badge" id="cartBadge">0</span>
+            🛒
+        </div>
+    </footer>
+
+    <!-- 购物车侧边栏 -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h2 id="cartHeaderTitle">Order</h2>
+            <button class="close-btn" id="closeCartBtn">✕</button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <!-- 购物车项目将通过JavaScript动态生成 -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total: $<span id="cartTotal">0.00</span></span>
+            </div>
+            <button class="btn-submit" id="submitOrderBtn">Submit Order</button>
+            <button class="btn-clear" id="clearCartBtn">Clear Order</button>
+        </div>
+    </div>
+
+    <!-- 面类定制模态框 -->
+    <div class="modal" id="noodleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Customize Noodles</h2>
+                <button class="close-btn" id="closeNoodleModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- 步骤指示器 -->
+                <div class="step-indicator">
+                    <div class="step active" data-step="1">
+                        <span class="step-number">1</span>
+                        <span class="step-label">Ingredients</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span class="step-number">2</span>
+                        <span class="step-label">Soup Base</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span class="step-number">3</span>
+                        <span class="step-label">Noodle</span>
+                    </div>
+                    <div class="step" data-step="4">
+                        <span class="step-number">4</span>
+                        <span class="step-label">Spice</span>
+                    </div>
+                </div>
+
+                <!-- 步骤内容 -->
+                <div class="step-content" id="stepContent">
+                    <!-- 步骤内容将通过JavaScript动态生成 -->
+                </div>
+
+                <!-- 已选信息显示 -->
+                <div class="selected-info" id="selectedInfo"></div>
+
+                <!-- 操作按钮 -->
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="prevStepBtn" style="display: none;">Prev</button>
+                    <button class="btn-primary" id="nextStepBtn">Next</button>
+                    <button class="btn-submit" id="addNoodleBtn" style="display: none;">Add to Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="menu-data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
