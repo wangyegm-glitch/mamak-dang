@@ -337,18 +337,14 @@ function renderNoodleStep() {
 // 渲染辣度选择步骤
 function renderSpicyStep() {
     return `
-        <h3 style="margin-bottom: 20px; color: #333;">Select Spice Level<br>选择辣度</h3>
-        <div class="spicy-levels">
+        <h3 style="margin-bottom: 12px; color: #333; font-size: 14px;">Select Spice Level</h3>
+        <div class="option-grid">
             ${menuData.noodles.spicyLevels.map(level => {
-                const nameDisplay = level.nameCN ? `${level.name}<br>${level.nameCN}` : level.name;
                 return `
-                <div class="spicy-option ${appState.noodleCustomization.selectedSpicy?.id === level.id ? 'selected' : ''}" 
+                <button class="option-card ${appState.noodleCustomization.selectedSpicy?.id === level.id ? 'selected' : ''}" 
                      onclick="selectSpicy(${level.id})">
-                    <div>
-                        <div class="spicy-name">${nameDisplay}</div>
-                    </div>
-                    <div class="spicy-icon">${level.icon}</div>
-                </div>
+                    <div class="option-card-name">${level.name} ${level.icon}</div>
+                </button>
             `;
             }).join('')}
         </div>
@@ -401,29 +397,24 @@ function updateSelectedInfo() {
     const info = [];
     
     if (selectedTopping) {
-        const toppingDisplay = selectedTopping.nameCN ? `${selectedTopping.name} / ${selectedTopping.nameCN}` : selectedTopping.name;
-        info.push(`Ingredients / 配料: ${toppingDisplay}`);
+        info.push(`Ingredients: ${selectedTopping.name}`);
     }
     if (selectedBase) {
-        const baseDisplay = selectedBase.nameCN ? `${selectedBase.name} / ${selectedBase.nameCN}` : selectedBase.name;
-        info.push(`Soup Base / 汤底: ${baseDisplay}`);
+        info.push(`Soup Base: ${selectedBase.name}`);
     }
     if (selectedNoodle) {
-        const noodleDisplay = selectedNoodle.nameCN ? `${selectedNoodle.name} / ${selectedNoodle.nameCN}` : selectedNoodle.name;
-        info.push(`Noodles / 面条: ${noodleDisplay}`);
+        info.push(`Noodles: ${selectedNoodle.name}`);
     }
     if (selectedSpicy) {
-        const spicyDisplay = selectedSpicy.nameCN ? `${selectedSpicy.name} / ${selectedSpicy.nameCN}` : selectedSpicy.name;
-        info.push(`Spice Level / 辣度: ${spicyDisplay} ${selectedSpicy.icon}`);
+        info.push(`Spice Level: ${selectedSpicy.name} ${selectedSpicy.icon}`);
     }
     if (selectedSize) {
-        const sizeDisplay = selectedSize.nameCN ? `${selectedSize.name} / ${selectedSize.nameCN}` : selectedSize.name;
-        info.push(`Size / 规格: ${sizeDisplay}`);
+        info.push(`Size: ${selectedSize.name}`);
     }
     
     if (info.length > 0) {
         elements.selectedInfo.innerHTML = `
-            <div class="selected-info-title">Selected / 已选择：</div>
+            <div class="selected-info-title">Selected:</div>
             ${info.map(item => `<div class="selected-info-item">${item}</div>`).join('')}
         `;
     } else {
@@ -436,15 +427,15 @@ function nextStep() {
     const { currentStep, selectedTopping, selectedBase, selectedNoodle } = appState.noodleCustomization;
     
     if (currentStep === 1 && !selectedTopping) {
-        showToast('Please select ingredients first / 请先选择配料');
+        showToast('Please select ingredients first');
         return;
     }
     if (currentStep === 2 && !selectedBase) {
-        showToast('Please select soup base first / 请先选择汤底');
+        showToast('Please select soup base first');
         return;
     }
     if (currentStep === 3 && !selectedNoodle) {
-        showToast('Please select noodle type first / 请先选择面条类型');
+        showToast('Please select noodle type first');
         return;
     }
     
@@ -461,7 +452,7 @@ function addNoodleToCart() {
     const { selectedTopping, selectedBase, selectedNoodle, selectedSpicy, selectedSize } = appState.noodleCustomization;
     
     if (!selectedTopping || !selectedBase || !selectedNoodle || !selectedSpicy) {
-        showToast('Please complete all selections / 请完成所有选择');
+        showToast('Please complete all selections');
         return;
     }
     
