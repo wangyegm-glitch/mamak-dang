@@ -1,8 +1,11 @@
 // 应用状态
 const appState = {
     currentCategory: 'appetizer',
-    cart: [],
     selectedTable: null, // 选中的桌号
+    // 每个桌号的购物车 { '1': [...], '2': [...], ... }
+    tableCarts: {},
+    // 每个桌号的已提交订单 { '1': [...], '2': [...], ... }
+    tableOrders: {},
     noodleCustomization: {
         currentStep: 1,
         selectedTopping: null,
@@ -12,6 +15,21 @@ const appState = {
         selectedSize: null  // 规格选择（Cute Size）
     }
 };
+
+// 获取当前桌号的购物车
+function getCurrentCart() {
+    if (!appState.selectedTable) return [];
+    if (!appState.tableCarts[appState.selectedTable]) {
+        appState.tableCarts[appState.selectedTable] = [];
+    }
+    return appState.tableCarts[appState.selectedTable];
+}
+
+// 设置当前桌号的购物车
+function setCurrentCart(cart) {
+    if (!appState.selectedTable) return;
+    appState.tableCarts[appState.selectedTable] = cart;
+}
 
 // DOM 元素
 const elements = {
@@ -43,7 +61,12 @@ function init() {
     setupEventListeners();
     renderAllMenus();
     renderTables();
+    // 初始化第一个桌号的购物车
+    if (appState.selectedTable) {
+        getCurrentCart(); // 确保购物车已初始化
+    }
     updateCartBadge();
+    updateTableStatus();
 }
 
 // 设置事件监听器
@@ -139,13 +162,25 @@ function renderTables() {
         item.addEventListener('click', () => {
             elements.tableList.querySelectorAll('.table-item').forEach(t => t.classList.remove('active'));
             item.classList.add('active');
-            appState.selectedTable = item.dataset.tableNum;
-            // 如果购物车已打开，更新标题
-            if (elements.cartSidebar.classList.contains('open') && elements.cartHeaderTitle) {
-                elements.cartHeaderTitle.textContent = `Order - Table ${appState.selectedTable}`;
+            const newTable = item.dataset.tableNum;
+            appState.selectedTable = newTable;
+            
+            // 切换桌号时，更新购物车显示
+            updateCartBadge();
+            if (elements.cartSidebar.classList.contains('open')) {
+                renderCart();
+                if (elements.cartHeaderTitle) {
+                    elements.cartHeaderTitle.textContent = `Order - Table ${appState.selectedTable}`;
+                }
             }
+            
+            // 更新桌号显示状态
+            updateTableStatus();
         });
     });
+    
+    // 初始化时更新桌号状态
+    updateTableStatus();
 }
 
 
@@ -167,7 +202,7 @@ function createMenuItem(item, category, color) {
 function addToCart(itemId, category) {
     // 检查是否选择了桌号
     if (!appState.selectedTable) {
-        showToast('Please select a table first / 请先选择桌号');
+        showToast('Please select a table first');
         return;
     }
     
@@ -176,6 +211,7 @@ function addToCart(itemId, category) {
     
     if (!item) return;
 
+    const cart = getCurrentCart();
     const cartItem = {
         id: Date.now(),
         name: item.name, // 只使用英文名
@@ -187,8 +223,10 @@ function addToCart(itemId, category) {
         table: appState.selectedTable // 记录桌号
     };
 
-    appState.cart.push(cartItem);
+    cart.push(cartItem);
+    setCurrentCart(cart);
     updateCartBadge();
+    updateTableStatus();
     showToast('Added to order');
 }
 
@@ -480,10 +518,11 @@ function addNoodleToCart() {
     
     // 检查是否选择了桌号
     if (!appState.selectedTable) {
-        showToast('Please select a table first / 请先选择桌号');
+        showToast('Please select a table first');
         return;
     }
     
+    const cart = getCurrentCart();
     const cartItem = {
         id: Date.now(),
         name: name,
@@ -502,8 +541,10 @@ function addNoodleToCart() {
         }
     };
     
-    appState.cart.push(cartItem);
+    cart.push(cartItem);
+    setCurrentCart(cart);
     updateCartBadge();
+    updateTableStatus();
     showToast('Added to order');
     closeNoodleModal();
 }
@@ -531,7 +572,9 @@ function closeCart() {
 
 // 渲染购物车
 function renderCart() {
-    if (appState.cart.length === 0) {
+    const cart = getCurrentCart();
+    
+    if (cart.length === 0) {
         elements.cartItems.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🛒</div>
@@ -542,7 +585,7 @@ function renderCart() {
         return;
     }
     
-    elements.cartItems.innerHTML = appState.cart.map(item => `
+    elements.cartItems.innerHTML = cart.map(item => `
         <div class="cart-item">
             <div class="cart-item-info">
                 <div class="cart-item-name">${item.name}</div>
@@ -565,70 +608,127 @@ function renderCart() {
 
 // 更新数量
 function updateQuantity(itemId, change) {
-    const item = appState.cart.find(i => i.id === itemId);
+    const cart = getCurrentCart();
+    const item = cart.find(i => i.id === itemId);
     if (!item) return;
     
     item.quantity += change;
     if (item.quantity <= 0) {
-        appState.cart = appState.cart.filter(i => i.id !== itemId);
+        const newCart = cart.filter(i => i.id !== itemId);
+        setCurrentCart(newCart);
+    } else {
+        setCurrentCart(cart);
     }
     
     updateCartBadge();
+    updateTableStatus();
     renderCart();
 }
 
 // 更新购物车总计
 function updateCartTotal() {
-    const total = appState.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const cart = getCurrentCart();
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     elements.cartTotal.textContent = total.toFixed(2);
 }
 
 // 更新购物车徽章
 function updateCartBadge() {
-    const count = appState.cart.reduce((sum, item) => sum + item.quantity, 0);
+    const cart = getCurrentCart();
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
     elements.cartBadge.textContent = count;
     elements.cartBadge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+// 更新桌号状态显示
+function updateTableStatus() {
+    const tableNumbers = ['1', '2', '3', '4', '5a', '5b', '6a', '6b', '7a', '7b'];
+    
+    elements.tableList.querySelectorAll('.table-item').forEach(item => {
+        const tableNum = item.dataset.tableNum;
+        const cart = appState.tableCarts[tableNum] || [];
+        const orders = appState.tableOrders[tableNum] || [];
+        const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const orderCount = orders.length;
+        
+        // 移除旧的指示器
+        const oldIndicator = item.querySelector('.table-indicator');
+        if (oldIndicator) {
+            oldIndicator.remove();
+        }
+        
+        // 如果有购物车项目或订单，显示指示器
+        if (cartCount > 0 || orderCount > 0) {
+            const indicator = document.createElement('span');
+            indicator.className = 'table-indicator';
+            indicator.textContent = cartCount > 0 ? cartCount : (orderCount > 0 ? '✓' : '');
+            item.appendChild(indicator);
+        }
+    });
 }
 
 // 提交订单
 function submitOrder() {
     // 检查是否选择了桌号
     if (!appState.selectedTable) {
-        showToast('Please select a table first / 请先选择桌号');
+        showToast('Please select a table first');
         return;
     }
     
-    if (appState.cart.length === 0) {
-        showToast('Order is empty / 订单为空');
+    const cart = getCurrentCart();
+    
+    if (cart.length === 0) {
+        showToast('Order is empty');
         return;
     }
+    
+    // 创建订单对象
+    const order = {
+        id: Date.now(),
+        table: appState.selectedTable,
+        items: [...cart], // 复制购物车项目
+        total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        timestamp: new Date().toISOString(),
+        status: 'submitted'
+    };
+    
+    // 将订单添加到该桌号的订单列表
+    if (!appState.tableOrders[appState.selectedTable]) {
+        appState.tableOrders[appState.selectedTable] = [];
+    }
+    appState.tableOrders[appState.selectedTable].push(order);
     
     // 生成订单摘要
     let orderSummary = `Table: ${appState.selectedTable}\n`;
+    orderSummary += `Order #${order.id}\n`;
     orderSummary += `Order Details:\n\n`;
-    appState.cart.forEach((item, index) => {
+    cart.forEach((item, index) => {
         orderSummary += `${index + 1}. ${item.name} x${item.quantity}\n`;
         orderSummary += `   Code: ${item.code}\n`;
         orderSummary += `   Price: $${(item.price * item.quantity).toFixed(2)}\n\n`;
     });
     
-    const total = appState.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    orderSummary += `Total: $${total.toFixed(2)}`;
+    orderSummary += `Total: $${order.total.toFixed(2)}`;
     
     // 这里可以发送到服务器或打印
+    console.log('Order submitted:', order);
     console.log(orderSummary);
     alert(orderSummary);
     
-    // 清空购物车
-    clearCart();
+    // 清空当前桌号的购物车
+    setCurrentCart([]);
+    updateCartBadge();
+    updateTableStatus();
+    renderCart();
     showToast('Order submitted');
 }
 
 // 清空购物车
 function clearCart() {
-    if (confirm('Clear order? / 确定要清空订单吗？')) {
-        appState.cart = [];
+    if (confirm('Clear order?')) {
+        setCurrentCart([]);
         updateCartBadge();
+        updateTableStatus();
         renderCart();
         showToast('Order cleared');
     }
@@ -638,19 +738,19 @@ function clearCart() {
 function addByShortCode() {
     const code = elements.shortCodeInput.value.trim().toUpperCase();
     if (!code) {
-        showToast('Please enter code / 请输入短代码');
+        showToast('Please enter code');
         return;
     }
     
     // 检查是否选择了桌号
     if (!appState.selectedTable) {
-        showToast('Please select a table first / 请先选择桌号');
+        showToast('Please select a table first');
         return;
     }
     
     const mapped = shortCodeMap[code];
     if (!mapped) {
-        showToast('Code not found / 未找到该短代码');
+        showToast('Code not found');
         return;
     }
     
